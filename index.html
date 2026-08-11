@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>UDN Sport - Control de Asistencia</title>
+<meta name="theme-color" content="#0a1628">
+<meta name="description" content="Control de asistencia y gestion deportiva del club UDN Sport">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <button id="back-btn" class="back-btn"><i class="ti ti-arrow-left"></i></button>
+    <div class="logo"><img src="icons/logo-udn.png" alt="UDN Sport"></div>
+    <div class="titles">
+      <h1 id="hdr-title">UDN Sport</h1>
+      <p id="hdr-sub">Menu principal</p>
+    </div>
+    <span id="conn-dot" class="conn-dot" title="Estado de conexion"></span>
+    <button id="settings-btn" class="settings-btn"><i class="ti ti-settings"></i></button>
+  </header>
+
+  <!-- MENU PRINCIPAL -->
+  <section id="scr-menu" class="screen active">
+    <div class="menu-card" onclick="goTo('asis-home')">
+      <div class="icon-box blue"><i class="ti ti-clipboard-check"></i></div>
+      <div class="info">
+        <div class="t">Control de asistencia</div>
+        <div class="d">Entrenamientos, partidos, mingas</div>
+      </div>
+      <i class="ti ti-chevron-down chev"></i>
+    </div>
+    <div class="menu-card" onclick="goTo('partido')" style="opacity:.75">
+      <div class="icon-box red"><i class="ti ti-ball-football"></i></div>
+      <div class="info">
+        <div class="t">Gestion de partidos</div>
+        <div class="d">Alineacion, marcador, cronometro</div>
+      </div>
+      <i class="ti ti-chevron-down chev"></i>
+    </div>
+  </section>
+
+  <!-- PLACEHOLDER GESTION DE PARTIDOS -->
+  <section id="scr-partido" class="screen">
+    <div class="card" style="text-align:center;padding:40px 18px;">
+      <i class="ti ti-tools" style="font-size:32px;color:var(--text-muted)"></i>
+      <div style="font-size:14.5px;font-weight:600;margin-top:12px;">Gestion de partidos</div>
+      <div class="sub" style="margin-top:6px;">Este modulo (alineaciones, cronometro, goles, tarjetas) se definira y desarrollara en la siguiente etapa del proyecto.</div>
+    </div>
+  </section>
+
+  <!-- HOME DEL MODULO ASISTENCIA -->
+  <section id="scr-asis-home" class="screen">
+    <div class="menu-card" onclick="startNewList()">
+      <div class="icon-box blue"><i class="ti ti-plus"></i></div>
+      <div class="info">
+        <div class="t">Nuevo registro</div>
+        <div class="d">Tomar asistencia de un evento nuevo</div>
+      </div>
+    </div>
+    <div class="menu-card" onclick="goTo('listas')">
+      <div class="icon-box blue"><i class="ti ti-folder"></i></div>
+      <div class="info">
+        <div class="t">Listas guardadas</div>
+        <div class="d"><span id="count-listas">0</span> listas registradas</div>
+      </div>
+    </div>
+    <div id="pendientes-row" class="menu-card" onclick="goTo('listas')" style="display:none;border-color:var(--amber-bg)">
+      <div class="icon-box" style="background:var(--amber-bg);color:var(--amber-text)"><i class="ti ti-clock-exclamation"></i></div>
+      <div class="info">
+        <div class="t">Pendientes de sincronizar</div>
+        <div class="d"><span id="count-pendientes">0</span> listas sin subir a Sheets</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SELECCION DE ROL -->
+  <section id="scr-rol" class="screen">
+    <p class="sub" style="text-align:center;margin-top:6px;">¿Quien esta tomando este registro?</p>
+    <div class="toggle-row">
+      <span id="rol-btn-entrenador" class="toggle-opt active" onclick="setRol('Entrenador')">Entrenador</span>
+      <span id="rol-btn-coordinador" class="toggle-opt" onclick="setRol('Coordinador')">Coordinador</span>
+    </div>
+    <label>Nombre</label>
+    <input id="rol-nombre" placeholder="Ej. Carlos Ramirez">
+    <button class="btn btn-primary btn-block-gap" onclick="goToStep1FromRol()">Continuar</button>
+  </section>
+
+  <!-- PASO 1: DATOS DEL EVENTO -->
+  <section id="scr-step1" class="screen">
+    <div class="section-label">Datos del evento</div>
+    <label>Tipo de evento</label>
+    <select id="in-tipo" onchange="toggleTipoOtro()">
+      <option>Entrenamiento</option>
+      <option>Partido</option>
+      <option>Minga</option>
+      <option>Otro</option>
+    </select>
+    <input id="in-tipo-otro" placeholder="Especifica el tipo de evento" style="display:none;margin-top:8px">
+
+    <label>Fecha y hora</label>
+    <div class="row">
+      <input id="in-fecha" type="date">
+      <input id="in-hora" type="time">
+    </div>
+
+    <label>Lugar</label>
+    <input id="in-lugar" placeholder="Ej. Cancha principal">
+
+    <p class="field-hint">Puede haber mas de un evento el mismo dia; por eso se registra la hora exacta.</p>
+    <button class="btn btn-primary btn-block-gap" onclick="submitEventData()">Ir a lista de jugadores</button>
+  </section>
+
+  <!-- PASO 2: LISTA DE ASISTENCIA -->
+  <section id="scr-step2" class="screen">
+    <div class="section-label" id="step2-label">Registro de asistencia</div>
+    <div class="sub" id="evt-summary" style="margin-bottom:12px;"></div>
+
+    <div id="filters" class="chips"></div>
+    <div id="players"></div>
+
+    <div id="add-form" class="add-form card">
+      <input id="new-player-name" placeholder="Nombre del deportista">
+      <select id="new-player-cat">
+        <option>Junior</option><option>Infantil</option><option>Juvenil</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="confirmAddPlayer()">Agregar a la lista</button>
+      <p class="field-hint">Quedara marcado como "nuevo / pendiente de validar" hasta que el administrador lo revise en Sheets.</p>
+    </div>
+
+    <button class="btn btn-ghost btn-block-gap" onclick="toggleAddForm()">
+      <i class="ti ti-plus"></i> Agregar deportista nuevo
+    </button>
+    <button class="btn btn-primary btn-block-gap" onclick="saveCurrentList()">Guardar cambios</button>
+  </section>
+
+  <!-- LISTAS GUARDADAS -->
+  <section id="scr-listas" class="screen">
+    <button class="btn btn-ghost" style="margin-bottom:14px" onclick="syncAllPendingNow()">
+      <i class="ti ti-refresh"></i> Sincronizar todo lo pendiente
+    </button>
+    <div id="listas-empty" class="empty-state" style="display:none">
+      <i class="ti ti-folder-off"></i>
+      <p>Aun no hay listas guardadas.</p>
+    </div>
+    <div id="listas-wrap"></div>
+  </section>
+
+  <!-- CONFIGURACION -->
+  <section id="scr-config" class="screen">
+    <div class="section-label">Conexion con Google Sheets</div>
+    <label>Enlace del Apps Script (Web App URL)</label>
+    <input id="cfg-url" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+    <p class="field-hint" id="cfg-hint">
+      Se obtiene al publicar el script del club como Web App. Ver README del proyecto para la guia paso a paso.
+    </p>
+    <button class="btn btn-primary btn-block-gap" onclick="saveScriptUrl()">Guardar enlace</button>
+
+    <div class="card" style="margin-top:22px">
+      <div class="section-label" style="margin-bottom:6px">Roster de jugadores</div>
+      <p class="sub" id="cfg-last-sync">Aun no se ha sincronizado</p>
+      <p class="sub" style="margin-top:4px">Jugadores cacheados en este celular: <b id="cfg-roster-count">0</b></p>
+      <button class="btn btn-ghost btn-block-gap" onclick="syncRosterNow()">
+        <i class="ti ti-download"></i> Actualizar jugadores desde Sheets
+      </button>
+    </div>
+  </section>
+
+</div>
+
+<div id="toast"></div>
+
+<script src="js/lib/dexie.min.js"></script>
+<script src="js/data/db.js"></script>
+<script src="js/data/sheets.js"></script>
+<script src="js/features/attendance.js"></script>
+<script src="js/features/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
