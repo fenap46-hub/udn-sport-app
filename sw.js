@@ -2,7 +2,7 @@
 // IMPORTANTE: sube el numero de CACHE_VERSION cada vez que publiques cambios
 // del codigo, para que los celulares descarguen la version nueva.
 
-const CACHE_VERSION = 'udn-sport-v1';
+const CACHE_VERSION = 'udn-sport-v2';
 
 const APP_SHELL = [
   './',
@@ -19,7 +19,7 @@ const APP_SHELL = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/apple-touch-icon.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css'
+  'https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.44.0/tabler-icons.min.css'
 ];
 
 self.addEventListener('install', (event) => {
