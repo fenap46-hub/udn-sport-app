@@ -77,6 +77,25 @@ async function refreshAsisHomeCount() {
   document.getElementById('count-listas').textContent = n;
   document.getElementById('count-pendientes').textContent = pending;
   document.getElementById('pendientes-row').style.display = pending > 0 ? 'flex' : 'none';
+  await renderRosterFreshness();
+}
+
+async function renderRosterFreshness() {
+  const el = document.getElementById('roster-freshness');
+  if (!el) return;
+  const last = await getSetting('lastRosterSync', null);
+  const rosterCount = await db.roster.count();
+
+  if (!last) {
+    el.innerHTML = `<i class="ti ti-alert-triangle"></i> Nunca se ha sincronizado el roster. Ve a Configuracion.`;
+    el.className = 'roster-freshness warn';
+    return;
+  }
+
+  const days = Math.floor((Date.now() - new Date(last).getTime()) / 86400000);
+  const when = days === 0 ? 'hoy' : days === 1 ? 'hace 1 dia' : `hace ${days} dias`;
+  el.textContent = `Jugadores (${rosterCount}) actualizados: ${when}`;
+  el.className = 'roster-freshness' + (days >= 7 ? ' warn' : '');
 }
 
 /* -------- Inicio -------- */
@@ -92,6 +111,23 @@ async function initApp() {
   // registrar service worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+
+  // Sincronizacion silenciosa: si hay internet y el enlace de Sheets ya
+  // esta configurado, intenta traer el roster mas reciente en segundo
+  // plano al abrir la app, sin bloquear ni interrumpir al entrenador.
+  trySilentRosterSync();
+}
+
+async function trySilentRosterSync() {
+  if (!navigator.onLine) return;
+  const url = await Sheets.getScriptUrl();
+  if (!Sheets.isConfigured(url)) return;
+  try {
+    await Sheets.pullRoster();
+  } catch (e) {
+    // Fallo silencioso: si algo sale mal (sin señal, error del script),
+    // simplemente se sigue usando el roster que ya estaba guardado.
   }
 }
 
