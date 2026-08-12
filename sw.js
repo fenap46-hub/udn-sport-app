@@ -2,7 +2,7 @@
 // IMPORTANTE: sube el numero de CACHE_VERSION cada vez que publiques cambios
 // del codigo, para que los celulares descarguen la version nueva.
 
-const CACHE_VERSION = 'udn-sport-v2';
+const CACHE_VERSION = 'udn-sport-v4';
 
 const APP_SHELL = [
   './',
