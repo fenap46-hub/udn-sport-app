@@ -60,6 +60,7 @@
 
   <!-- HOME DEL MODULO ASISTENCIA -->
   <section id="scr-asis-home" class="screen">
+    <p id="roster-freshness" class="roster-freshness"></p>
     <div class="menu-card" onclick="startNewList()">
       <div class="icon-box blue"><i class="ti ti-plus"></i></div>
       <div class="info">
@@ -134,7 +135,7 @@
         <option>Junior</option><option>Infantil</option><option>Juvenil</option>
       </select>
       <button class="btn btn-primary btn-sm" onclick="confirmAddPlayer()">Agregar a la lista</button>
-      <p class="field-hint">Quedara marcado como "nuevo / pendiente de validar" hasta que el administrador lo revise en Sheets.</p>
+      <p class="field-hint">Quedara marcado como "A PRUEBA / pendiente de validar" hasta que el administrador lo revise en Sheets.</p>
     </div>
 
     <button class="btn btn-ghost btn-block-gap" onclick="toggleAddForm()">
@@ -145,9 +146,14 @@
 
   <!-- LISTAS GUARDADAS -->
   <section id="scr-listas" class="screen">
-    <button class="btn btn-ghost" style="margin-bottom:14px" onclick="syncAllPendingNow()">
-      <i class="ti ti-refresh"></i> Sincronizar todo lo pendiente
-    </button>
+    <div class="row" style="margin-bottom:14px">
+      <button class="btn btn-ghost" onclick="syncAllPendingNow()">
+        <i class="ti ti-refresh"></i> Sincronizar todo
+      </button>
+      <button class="btn btn-ghost" onclick="deleteAllSyncedNow()">
+        <i class="ti ti-trash"></i> Limpiar sincronizadas
+      </button>
+    </div>
     <div id="listas-empty" class="empty-state" style="display:none">
       <i class="ti ti-folder-off"></i>
       <p>Aun no hay listas guardadas.</p>
