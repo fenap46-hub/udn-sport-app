@@ -24,14 +24,16 @@ const Sheets = (() => {
     const data = await res.json();
     if (!data || !Array.isArray(data.players)) throw new Error('BAD_RESPONSE');
 
-    await upsertRosterFromRemote(data.players);
+    await replaceRosterFromRemote(data.players);
     await setSetting('lastRosterSync', new Date().toISOString());
     return data.players.length;
   }
 
   // Sube una lista de asistencia (evento + cada jugador) a la hoja "Asistencia".
-  // Si hay jugadores nuevos marcados como pendientes, tambien los manda
-  // a la hoja "Jugadores_Pendientes" para que el administrador los revise.
+  // Solo se envian los jugadores que realmente fueron marcados (P/A/J) en
+  // esta lista -- las categorias que no se tomaron ese dia no generan filas
+  // "Sin registrar" en el Sheet. Si hay jugadores nuevos marcados como
+  // pendientes, tambien los manda a "Jugadores_Pendientes" para revision.
   async function pushList(listId) {
     const url = await getScriptUrl();
     if (!isConfigured(url)) throw new Error('NO_CONFIG');
@@ -39,6 +41,9 @@ const Sheets = (() => {
 
     const { list, players } = await getListWithPlayers(listId);
     if (!list) throw new Error('LIST_NOT_FOUND');
+
+    const marcados = players.filter(p => !!p.status);
+    if (!marcados.length) throw new Error('SIN_MARCAR');
 
     const payload = {
       action: 'pushAttendance',
@@ -50,14 +55,15 @@ const Sheets = (() => {
         registradorRol: list.registradorRol,
         registradorNombre: list.registradorNombre
       },
-      attendance: players.map(p => ({
+      attendance: marcados.map(p => ({
         nombre: p.name,
         categoria: p.category,
-        estado: p.status || 'Sin registrar',
+        estado: p.status,
+        horaRegistro: p.registeredAt ? new Date(p.registeredAt).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' }) : '',
         nota: p.note || '',
         jugadorNuevo: !!p.isPendingPlayer
       })),
-      pendingPlayers: players
+      pendingPlayers: marcados
         .filter(p => p.isPendingPlayer)
         .map(p => ({
           nombre: p.name,
