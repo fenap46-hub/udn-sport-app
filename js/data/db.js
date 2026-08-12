@@ -60,6 +60,22 @@ async function upsertRosterFromRemote(remotePlayers) {
   });
 }
 
+// Reemplaza TODO el roster local por el que viene de Sheets. Se usa en
+// lugar de upsertRosterFromRemote para evitar que queden mezclados los
+// 9 jugadores de muestra (los que trae la app antes de la primera
+// sincronizacion) junto con el roster real del club.
+async function replaceRosterFromRemote(remotePlayers) {
+  await db.transaction('rw', db.roster, async () => {
+    await db.roster.clear();
+    await db.roster.bulkAdd(remotePlayers.map(p => ({
+      remoteId: p.id,
+      name: p.name,
+      category: p.category,
+      active: p.active !== false
+    })));
+  });
+}
+
 async function seedDemoRosterIfEmpty() {
   const count = await db.roster.count();
   if (count > 0) return;
@@ -117,7 +133,8 @@ async function updateListMeta(listId, eventData) {
 }
 
 async function setAttendanceStatus(attendanceId, status) {
-  await db.attendance.update(attendanceId, { status });
+  const registeredAt = status ? new Date().toISOString() : null;
+  await db.attendance.update(attendanceId, { status, registeredAt });
   const row = await db.attendance.get(attendanceId);
   if (row) await db.lists.update(row.listId, { syncStatus: 'pending', updatedAt: new Date().toISOString() });
 }
@@ -159,4 +176,18 @@ async function markListSynced(listId) {
 
 async function getPendingListsCount() {
   return db.lists.where('syncStatus').equals('pending').count();
+}
+
+async function deleteList(listId) {
+  await db.transaction('rw', db.lists, db.attendance, db.pendingPlayers, async () => {
+    await db.attendance.where('listId').equals(listId).delete();
+    await db.pendingPlayers.where('listId').equals(listId).delete();
+    await db.lists.delete(listId);
+  });
+}
+
+async function deleteAllSyncedLists() {
+  const synced = await db.lists.where('syncStatus').equals('synced').toArray();
+  for (const l of synced) await deleteList(l.id);
+  return synced.length;
 }
