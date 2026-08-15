@@ -103,5 +103,82 @@ const Sheets = (() => {
     return { done, failed, total: pending.length };
   }
 
-  return { getScriptUrl, isConfigured, pullRoster, pushList, pushAllPending };
+  // Sube un partido completo (datos + alineacion + eventos + penales) a
+  // las 4 pestañas del Sheet: Partidos, Partidos_Alineaciones,
+  // Partidos_Eventos, Partidos_Penales. Todas ligadas por "ID Partido".
+  async function pushMatch(matchId) {
+    const url = await getScriptUrl();
+    if (!isConfigured(url)) throw new Error('NO_CONFIG');
+    if (!navigator.onLine) throw new Error('OFFLINE');
+
+    const { match, lineup, events, penalties } = await getMatchFull(matchId);
+    if (!match) throw new Error('MATCH_NOT_FOUND');
+
+    const idPartido = 'P-' + match.fecha.replace(/-/g, '') + '-' + match.hora.replace(':', '');
+
+    const payload = {
+      action: 'pushMatch',
+      match: {
+        idPartido,
+        fecha: match.fecha,
+        hora: match.hora,
+        categoria: match.categoria,
+        rival: match.rival,
+        cancha: match.cancha,
+        sistema: match.sistema,
+        duracionTiempo: match.duracionTiempo,
+        golesUdn: match.golesUdn,
+        golesRival: match.golesRival,
+        resultado: match.resultado,
+        registradorRol: match.registradorRol,
+        registradorNombre: match.registradorNombre,
+        nota: match.nota || ''
+      },
+      lineup: lineup.map(l => ({
+        idPartido, jugador: l.name, categoria: l.category, tipo: l.tipo, posicion: l.posicion || ''
+      })),
+      events: events.map(e => ({
+        idPartido, tiempo: e.tiempo, minuto: fmtSegundos(e.segundos), tipo: e.tipo, jugador: e.jugador, detalle: e.detalle
+      })),
+      penalties: penalties.map(p => ({
+        idPartido, ronda: p.ronda, jugadorUdn: p.jugadorUdn, resUdn: p.resUdn, resRival: p.resRival
+      }))
+    };
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('HTTP_' + res.status);
+    const data = await res.json();
+    if (!data || data.ok !== true) throw new Error(data && data.error ? data.error : 'SYNC_FAILED');
+
+    await markMatchSynced(matchId);
+    return true;
+  }
+
+  async function pushAllPendingMatches(onProgress) {
+    const matches = await getMatches();
+    const pending = matches.filter(m => m.syncStatus !== 'synced');
+    let done = 0, failed = 0;
+    for (const m of pending) {
+      try {
+        await pushMatch(m.id);
+        done++;
+      } catch (e) {
+        failed++;
+      }
+      if (onProgress) onProgress(done + failed, pending.length);
+    }
+    return { done, failed, total: pending.length };
+  }
+
+  function fmtSegundos(s) {
+    const m = Math.floor((s || 0) / 60).toString().padStart(2, '0');
+    const sec = ((s || 0) % 60).toString().padStart(2, '0');
+    return m + ':' + sec;
+  }
+
+  return { getScriptUrl, isConfigured, pullRoster, pushList, pushAllPending, pushMatch, pushAllPendingMatches };
 })();
