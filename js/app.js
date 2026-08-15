@@ -7,13 +7,21 @@ let currentRol = 'Entrenador';
 
 const screenTitles = {
   menu:        ['UDN Sport', 'Menu principal'],
-  partido:     ['Gestion de partidos', 'Modulo en desarrollo'],
+  partido:     ['Gestion de partidos', 'Elige una opcion'],
   'asis-home': ['Control de asistencia', 'Elige una opcion'],
   rol:         ['Nuevo registro', 'Quien esta registrando'],
   step1:       ['Nuevo registro', 'Datos del evento'],
   step2:       ['Registro de asistencia', 'Lista de jugadores'],
   listas:      ['Listas guardadas', 'Toca una para ver o editar'],
-  config:      ['Configuracion', 'Conexion con Google Sheets']
+  config:      ['Configuracion', 'Conexion con Google Sheets'],
+
+  'partido-rol':        ['Nuevo partido', 'Quien dirige'],
+  'partido-config':     ['Nuevo partido', 'Datos del partido'],
+  'partido-alineacion': ['Alineacion', 'Titulares y suplentes'],
+  'partido-vivo':       ['Partido en vivo', 'Toca para registrar'],
+  'partido-penales':    ['Penales', 'Tanda opcional'],
+  'partido-resumen':    ['Resumen final', 'Revisa y guarda'],
+  'partido-historial':  ['Historial de partidos', 'Toca uno para ver o editar']
 };
 
 const backMap = {
@@ -23,7 +31,15 @@ const backMap = {
   step1: 'rol',
   step2: () => editingExisting ? 'listas' : 'step1',
   listas: 'asis-home',
-  config: 'menu'
+  config: 'menu',
+
+  'partido-rol': 'partido',
+  'partido-config': 'partido-rol',
+  'partido-alineacion': 'partido-config',
+  'partido-vivo': 'partido-alineacion',
+  'partido-penales': 'partido-vivo',
+  'partido-resumen': 'partido-vivo',
+  'partido-historial': 'partido'
 };
 
 function showScreen(id) {
@@ -44,6 +60,15 @@ async function goTo(id) {
   if (id === 'step2') await enterStep2();
   if (id === 'listas') await renderListas();
   if (id === 'config') await enterConfig();
+
+  if (id === 'partido') await enterPartidoHome();
+  if (id === 'partido-config') await enterMatchConfig();
+  if (id === 'partido-alineacion') await enterAlineacion();
+  if (id === 'partido-vivo') await enterPartidoVivo();
+  if (id === 'partido-penales') await enterPenales();
+  if (id === 'partido-resumen') await enterResumen();
+  if (id === 'partido-historial') await renderHistorialPartidos();
+
   showScreen(id);
 }
 
