@@ -49,13 +49,193 @@
     </div>
   </section>
 
-  <!-- PLACEHOLDER GESTION DE PARTIDOS -->
+  <!-- HOME DEL MODULO GESTION DE PARTIDOS -->
   <section id="scr-partido" class="screen">
-    <div class="card" style="text-align:center;padding:40px 18px;">
-      <i class="ti ti-tools" style="font-size:32px;color:var(--text-muted)"></i>
-      <div style="font-size:14.5px;font-weight:600;margin-top:12px;">Gestion de partidos</div>
-      <div class="sub" style="margin-top:6px;">Este modulo (alineaciones, cronometro, goles, tarjetas) se definira y desarrollara en la siguiente etapa del proyecto.</div>
+    <div class="menu-card" onclick="startNewMatch()">
+      <div class="icon-box red"><i class="ti ti-plus"></i></div>
+      <div class="info">
+        <div class="t">Nuevo partido</div>
+        <div class="d">Configurar y jugar</div>
+      </div>
     </div>
+    <div class="menu-card" onclick="goTo('partido-historial')">
+      <div class="icon-box red"><i class="ti ti-folder"></i></div>
+      <div class="info">
+        <div class="t">Historial de partidos</div>
+        <div class="d"><span id="count-partidos">0</span> partidos registrados</div>
+      </div>
+    </div>
+    <div id="partidos-pendientes-row" class="menu-card" onclick="goTo('partido-historial')" style="display:none;border-color:var(--amber-bg)">
+      <div class="icon-box" style="background:var(--amber-bg);color:var(--amber-text)"><i class="ti ti-clock-exclamation"></i></div>
+      <div class="info">
+        <div class="t">Pendientes de sincronizar</div>
+        <div class="d"><span id="count-partidos-pendientes">0</span> partidos sin subir a Sheets</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODULO 2: QUIEN DIRIGE -->
+  <section id="scr-partido-rol" class="screen">
+    <p class="sub" style="text-align:center;margin-top:6px;">¿Quien dirige este partido?</p>
+    <div class="toggle-row">
+      <span id="match-rol-entrenador" class="toggle-opt active" onclick="setRolMatch('Entrenador')">Entrenador</span>
+      <span id="match-rol-coordinador" class="toggle-opt" onclick="setRolMatch('Coordinador')">Coordinador</span>
+    </div>
+    <label>Nombre</label>
+    <input id="match-rol-nombre" placeholder="Ej. Carlos Ramirez">
+    <button class="btn btn-primary btn-block-gap" onclick="goToMatchConfigFromRol()">Continuar</button>
+  </section>
+
+  <!-- MODULO 2: DATOS DEL PARTIDO -->
+  <section id="scr-partido-config" class="screen">
+    <div class="section-label">Datos del partido</div>
+    <label>Equipo rival</label>
+    <input id="match-rival" placeholder="Ej. Atl. Norte">
+    <label>Categoria</label>
+    <select id="match-cat">
+      <option>Junior</option><option>Infantil</option><option>Juvenil</option><option>Mixta</option>
+    </select>
+    <div class="row">
+      <div>
+        <label>Fecha</label>
+        <input id="match-fecha" type="date">
+      </div>
+      <div>
+        <label>Hora</label>
+        <input id="match-hora" type="time">
+      </div>
+    </div>
+    <label>Cancha</label>
+    <input id="match-cancha" placeholder="Ej. Cancha municipal">
+    <div class="row">
+      <div>
+        <label>Sistema de juego</label>
+        <input id="match-sistema" value="1-3-2-1" oninput="renderPitch()">
+      </div>
+      <div style="max-width:110px">
+        <label>Min x tiempo</label>
+        <input id="match-duracion" type="number" value="25">
+      </div>
+    </div>
+    <p class="field-hint">La duracion es por cada tiempo (hay descanso entre 1er y 2do tiempo). El sistema se escribe libre, ej 1-3-2-1.</p>
+    <div id="match-pitch-wrap" class="card" style="margin-top:10px"></div>
+    <button class="btn btn-primary btn-block-gap" onclick="submitMatchConfig()">Ir a alineacion</button>
+  </section>
+
+  <!-- MODULO 2: ALINEACION -->
+  <section id="scr-partido-alineacion" class="screen">
+    <div class="section-label">Alineacion</div>
+    <div id="contadores-alin" class="stat-row"></div>
+    <div id="filtros-alin" class="chips"></div>
+    <div id="lista-alin"></div>
+    <p id="alin-warn" class="field-hint" style="display:none;color:var(--red-text)">Selecciona al menos un titular antes de iniciar.</p>
+    <button class="btn btn-primary btn-block-gap" onclick="iniciarPartido()">Iniciar partido</button>
+  </section>
+
+  <!-- MODULO 2: PARTIDO EN VIVO -->
+  <section id="scr-partido-vivo" class="screen">
+    <div class="scoreboard">
+      <div class="scoreboard-teams">
+        <span class="us">UDN Sport</span><span>vs</span><span id="vivo-rival">Rival</span>
+      </div>
+      <div class="scoreboard-marcador" id="vivo-marcador">0 - 0</div>
+      <div class="scoreboard-fase" id="vivo-fase">PRIMER TIEMPO</div>
+      <div class="scoreboard-crono" id="vivo-crono">00:00</div>
+      <div id="vivo-alerta-alargue" class="alerta alerta-red" style="display:none">EN ALARGUE / TIEMPO EXTRA</div>
+      <div id="vivo-alerta-tiempo" class="alerta alerta-amber" style="display:none">Tiempo cumplido</div>
+    </div>
+
+    <div class="grid-2">
+      <button id="btn-vivo-play" class="btn btn-ghost" onclick="toggleCrono()"><i class="ti ti-player-play"></i> Play</button>
+      <button id="btn-vivo-alargue" class="btn btn-ghost" onclick="toggleAlargueMatch()"><i class="ti ti-clock-plus"></i> Alargue</button>
+      <button class="btn btn-ghost" onclick="resetCronoMatch()"><i class="ti ti-refresh"></i> Reset</button>
+      <button class="btn btn-ghost" onclick="goTo('partido-penales')"><i class="ti ti-target"></i> Penales</button>
+    </div>
+    <button id="btn-vivo-fase" class="btn btn-outline-cyan btn-block-gap" onclick="avanzarFaseMatch()">Finalizar 1er tiempo</button>
+
+    <div class="grid-2">
+      <div class="counter-box green">
+        <div class="l">Gol UDN</div>
+        <div class="counter-row">
+          <span class="counter-btn" onclick="golMatch('udn',-1)">-</span>
+          <span id="vivo-gol-udn">0</span>
+          <span class="counter-btn" onclick="golMatch('udn',1)">+</span>
+        </div>
+      </div>
+      <div class="counter-box red">
+        <div class="l">Gol rival</div>
+        <div class="counter-row">
+          <span class="counter-btn" onclick="golMatch('rival',-1)">-</span>
+          <span id="vivo-gol-rival">0</span>
+          <span class="counter-btn" onclick="golMatch('rival',1)">+</span>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <button class="btn btn-amber" onclick="tarjetaMatch('amarilla')">Amarilla</button>
+      <button class="btn btn-danger" onclick="tarjetaMatch('roja')">Roja</button>
+    </div>
+    <button class="btn btn-ghost btn-block-gap" onclick="toggleCambioForm()"><i class="ti ti-transfer"></i> Registrar cambio de jugador</button>
+
+    <div id="cambio-form" class="card" style="display:none;margin-top:10px">
+      <label>Sale (titular en cancha)</label>
+      <select id="sel-sale"></select>
+      <label>Entra (suplente disponible)</label>
+      <select id="sel-entra"></select>
+      <p id="cambio-warn" class="field-hint" style="display:none;color:var(--red-text)">Elige quien sale y quien entra.</p>
+      <button class="btn btn-primary btn-block-gap" onclick="confirmarCambio()">Confirmar cambio</button>
+    </div>
+
+    <div class="section-label" style="margin-top:16px">Eventos del partido</div>
+    <div id="lista-eventos-vivo" class="event-log"></div>
+
+    <button class="btn btn-danger btn-block-gap" onclick="goTo('partido-resumen')">Finalizar partido</button>
+  </section>
+
+  <!-- MODULO 2: PENALES -->
+  <section id="scr-partido-penales" class="screen">
+    <div class="section-label">Tanda de penales (opcional)</div>
+    <div class="pk-scoreboard">
+      <div><div class="l">UDN Sport</div><div id="pk-udn" class="v">0</div></div>
+      <div class="sep">-</div>
+      <div><div class="l">Rival</div><div id="pk-rival" class="v">0</div></div>
+    </div>
+    <div id="pk-ganador" class="pk-ganador" style="display:none"></div>
+    <div id="pk-rounds"></div>
+    <button class="btn btn-ghost btn-block-gap" onclick="pkAgregarRonda()"><i class="ti ti-plus"></i> Agregar ronda</button>
+    <button class="btn btn-outline-cyan btn-block-gap" onclick="pkFinalizar()">Definir ganador de la tanda</button>
+    <button class="btn btn-ghost btn-block-gap" onclick="goTo('partido-vivo')">Volver al partido</button>
+  </section>
+
+  <!-- MODULO 2: RESUMEN FINAL -->
+  <section id="scr-partido-resumen" class="screen">
+    <div class="section-label">Resumen final</div>
+    <div class="scoreboard" style="padding:14px">
+      <div class="scoreboard-teams" style="justify-content:center;gap:6px"><span>UDN Sport vs</span><span id="resumen-rival">Rival</span></div>
+      <div class="scoreboard-marcador" id="resumen-marcador">0 - 0</div>
+      <div class="scoreboard-fase" id="resumen-resultado" style="color:var(--text)">-</div>
+    </div>
+    <div id="resumen-stats" style="margin:12px 0"></div>
+    <label>Nota / observacion del partido (opcional)</label>
+    <textarea id="match-nota" placeholder="Ej. Buen desempeno en defensa, revisar marca en jugadas aereas..."></textarea>
+    <div class="check-row">
+      <input type="checkbox" id="chk-autosync-match" checked>
+      <label for="chk-autosync-match">Sincronizar automaticamente al guardar (si hay internet)</label>
+    </div>
+    <button class="btn btn-primary btn-block-gap" onclick="guardarPartido()">Guardar partido</button>
+  </section>
+
+  <!-- MODULO 2: HISTORIAL -->
+  <section id="scr-partido-historial" class="screen">
+    <div class="row" style="margin-bottom:14px">
+      <button class="btn btn-ghost" onclick="syncAllPendingMatchesNow()"><i class="ti ti-refresh"></i> Sincronizar todo</button>
+      <button class="btn btn-ghost" onclick="deleteAllSyncedMatchesNow()"><i class="ti ti-trash"></i> Limpiar sincronizados</button>
+    </div>
+    <div id="historial-partidos-empty" class="empty-state" style="display:none">
+      <i class="ti ti-folder-off"></i>
+      <p>Aun no hay partidos guardados.</p>
+    </div>
+    <div id="historial-partidos-wrap"></div>
   </section>
 
   <!-- HOME DEL MODULO ASISTENCIA -->
@@ -189,6 +369,7 @@
 <script src="js/data/db.js"></script>
 <script src="js/data/sheets.js"></script>
 <script src="js/features/attendance.js"></script>
+<script src="js/features/match.js"></script>
 <script src="js/features/config.js"></script>
 <script src="js/app.js"></script>
 </body>
